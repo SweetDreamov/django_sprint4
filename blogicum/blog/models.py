@@ -1,7 +1,8 @@
-from django.db import models
 from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
+TEXT_LENGTH = 256
 
 
 class BaseModel(models.Model):
@@ -20,15 +21,9 @@ class BaseModel(models.Model):
 
 
 class Category(BaseModel):
-    title = models.CharField(
-        max_length=256,
-        verbose_name='Заголовок'
-    )
-    description = models.TextField(
-        verbose_name='Описание'
-    )
+    title = models.CharField(max_length=TEXT_LENGTH, verbose_name='Заголовок')
+    description = models.TextField(verbose_name='Описание')
     slug = models.SlugField(
-        max_length=64,
         unique=True,
         verbose_name='Идентификатор',
         help_text='Идентификатор страницы для URL; разрешены символы '
@@ -41,7 +36,7 @@ class Category(BaseModel):
 
 
 class Location(BaseModel):
-    name = models.CharField(max_length=256,
+    name = models.CharField(max_length=TEXT_LENGTH,
                             verbose_name='Название места')
 
     class Meta:
@@ -50,18 +45,14 @@ class Location(BaseModel):
 
 
 class Post(BaseModel):
-    title = models.CharField(
-        max_length=256,
-        verbose_name='Заголовок'
-    )
-    text = models.TextField(
-        verbose_name='Текст'
-    )
+    title = models.CharField(max_length=TEXT_LENGTH, verbose_name='Заголовок')
+    text = models.TextField(verbose_name='Текст')
     pub_date = models.DateTimeField(
         verbose_name='Дата и время публикации',
         help_text='Если установить дату и время в будущем — '
                   'можно делать отложенные публикации.'
     )
+    image = models.ImageField('Фото', upload_to='posts_images', blank=True)
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -86,4 +77,23 @@ class Post(BaseModel):
     class Meta:
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
-        ordering = ['-pub_date']
+
+
+class Comment(models.Model):
+    text = models.TextField('Текст комментария')
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        verbose_name='Комментарий',
+        related_name='comments',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'комментарий'
+        verbose_name_plural = 'Комментарии'
+        ordering = ('created_at',)
+
+    def __str__(self) -> str:
+        return self.text
